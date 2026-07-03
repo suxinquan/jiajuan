@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>调浆料</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  background:#f5efe4;font-family:system-ui,sans-serif;padding:10px;text-align:center;
+  touch-action:none;user-select:none;-webkit-user-select:none;overflow:hidden;height:100vh;
+}
+.title{color:#222;font-size:20px;margin:4px 0 2px}
+
+/* 玩法提示 */
+.help-banner{
+  background:#fffef5;border:2px solid #ffdd00;border-radius:10px;
+  padding:6px 14px;margin-bottom:6px;display:inline-flex;
+  align-items:center;gap:8px;
+  box-shadow:0 2px 6px rgba(200,170,50,.10);
+}
+.help-banner .help-icon{font-size:24px}
+.help-banner .help-text{font-size:13px;color:#6a5a2a;font-weight:600;letter-spacing:0.5px}
+
+#gameBox{
+  position:relative;width:min(96vw,620px);height:min(86vh,600px);
+  margin:0 auto;background:#faf5ee;border-radius:14px;box-shadow:0 4px 12px rgba(0,0,0,.08);
+  padding:14px 16px;touch-action:none;display:flex;flex-direction:column;
+}
+
+/* 上半部分：订单 + 桶 */
+.top-row{
+  display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-shrink:0;
+}
+/* 配方订单卡片 */
+.recipe-card{
+  background:#fff;border:2px solid #c9a87c;border-radius:14px;
+  padding:12px 14px;text-align:center;min-width:95px;
+  box-shadow:0 3px 10px rgba(0,0,0,.08);
+  flex-shrink:0;
+  position:relative;
+}
+.recipe-card::before{
+  content:'📋 订单';
+  position:absolute;top:-13px;left:50%;transform:translateX(-50%);
+  background:#c9a87c;color:#fff;font-size:11px;font-weight:700;
+  padding:3px 12px;border-radius:10px;white-space:nowrap;
+  letter-spacing:1px;
+}
+.recipe-card .rc-row{
+  display:flex;align-items:center;justify-content:space-between;gap:6px;
+  margin:3px 0;
+}
+.recipe-card .rc-icon{font-size:18px;width:24px;text-align:center}
+.recipe-card .rc-val{font-size:22px;font-weight:800;min-width:24px;text-align:center}
+.recipe-card .rc-starch{color:#c9904a}
+.recipe-card .rc-water{color:#5a9fd4}
+.recipe-card .rc-pva{color:#7a6a5a}
+
+/* 桶 */
+.bucket-area{flex:1;display:flex;align-items:center;justify-content:center}
+.bucket{
+  width:min(36vw,155px);height:min(26vh,155px);
+  background:linear-gradient(180deg,#c9b896,#b8a580 30%,#a89470);
+  border-radius:20px 20px 40% 40%;border:4px solid #8B7355;position:relative;overflow:hidden;
+  box-shadow:0 6px 24px rgba(0,0,0,.12);
+}
+.bucket-liquid{
+  position:absolute;bottom:0;left:0;width:100%;
+  background:linear-gradient(180deg,rgba(200,180,150,0.9),rgba(160,140,110,0.95));
+  transition:height 0.15s ease;border-radius:0 0 35% 35%;
+}
+.bucket-liquid.perfect{background:linear-gradient(180deg,rgba(180,210,170,0.9),rgba(140,180,130,0.95))}
+.bucket-liquid.over{
+  background:linear-gradient(180deg,rgba(220,150,140,0.9),rgba(190,120,110,0.95));
+  animation:overflowPulse 0.6s ease-in-out infinite alternate;
+}
+@keyframes overflowPulse{0%{opacity:0.85}100%{opacity:1}}
+.bucket-label{
+  position:absolute;bottom:6px;left:50%;transform:translateX(-50%);
+  color:#fff;font-size:11px;font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,.3);z-index:2;
+}
+
+/* 原料行 */
+.ingredients{display:flex;flex-direction:column;gap:8px;flex-shrink:0}
+.ingredient{
+  display:flex;align-items:center;gap:8px;background:#f5f0ea;
+  border-radius:12px;padding:9px 12px;border:2px solid #ede0d0;
+}
+.ingredient.active{border-color:#c9a87c;background:#faf5ee}
+.ingredient.done{border-color:#8ac88a;background:#f0f8f0}
+.ing-icon{font-size:24px;width:32px;text-align:center;flex-shrink:0}
+.ing-info{flex:1;text-align:left}
+.ing-name{font-size:14px;color:#3a2a22;font-weight:600}
+.ing-bar-wrap{width:100%;height:9px;background:#e8ddd0;border-radius:4px;overflow:hidden;margin-top:3px}
+.ing-bar{height:100%;border-radius:4px;transition:width 0.15s ease;background:linear-gradient(90deg,#c9a87c,#d4b88a)}
+.ing-bar.perfect{background:linear-gradient(90deg,#6aaa6a,#8ac88a)}
+.ing-bar.over{background:linear-gradient(90deg,#d87060,#e89080)}
+.ing-current{font-size:22px;font-weight:700;color:#3a2a22;width:30px;text-align:center;flex-shrink:0}
+.ing-unit{font-size:11px;color:#8a7a6a;flex-shrink:0;margin-right:4px}
+.pour-btn{
+  width:48px;height:48px;border-radius:50%;border:none;
+  font-size:22px;font-weight:700;color:#fff;cursor:pointer;flex-shrink:0;
+  background:linear-gradient(135deg,#c9a87c,#b8945a);
+  box-shadow:0 3px 12px rgba(200,170,120,.35);transition:all 0.1s ease;touch-action:none;
+  position:relative;
+}
+.pour-btn:active{transform:scale(0.86);box-shadow:0 1px 4px rgba(200,170,120,.2)}
+.pour-btn.done-btn{background:linear-gradient(135deg,#6aaa6a,#4a8a4a)}
+.pour-btn .ring{
+  position:absolute;top:-4px;left:-4px;width:56px;height:56px;
+  border-radius:50%;border:3px dashed #c9a87c;opacity:0;
+  animation:ringPulse 1.5s ease-in-out infinite;
+}
+.pour-btn:not(.done-btn) .ring{opacity:0.6}
+@keyframes ringPulse{0%,100%{transform:scale(1);opacity:0.4}50%{transform:scale(1.12);opacity:0.8}}
+
+/* 按钮区 */
+.btn-row{display:flex;gap:8px;margin-top:10px;flex-shrink:0}
+.confirm-btn{
+  flex:1;padding:13px;border:none;border-radius:12px;
+  font-size:16px;font-weight:700;letter-spacing:2px;
+  background:#d5c8b8;color:#b0a090;cursor:not-allowed;
+  box-shadow:0 3px 10px rgba(0,0,0,.04);
+}
+.confirm-btn.ready{background:linear-gradient(135deg,#6aaa6a,#4a8a4a);color:#fff;cursor:pointer;box-shadow:0 3px 14px rgba(106,170,106,.3)}
+.confirm-btn.ready:active{transform:scale(0.97)}
+.reset-btn-sm{
+  padding:13px 18px;border:none;border-radius:12px;
+  font-size:14px;font-weight:600;color:#fff;cursor:pointer;
+  background:#d83080;white-space:nowrap;
+}
+
+/* 底部状态 */
+.status-text{
+  font-size:12px;color:#8a7a6a;margin-top:6px;flex-shrink:0;
+  min-height:16px;
+}
+
+/* 通关弹窗 */
+.win-overlay{
+  position:fixed;top:0;left:0;width:100%;height:100%;
+  background:rgba(0,0,0,0.3);display:none;
+  justify-content:center;align-items:center;z-index:999;
+}
+.win-overlay.show{display:flex}
+.win-box{
+  background:#fffffff5;padding:30px 40px;border-radius:16px;
+  text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.15);max-width:90%;
+}
+.win-title{font-size:36px;font-weight:bold;color:#34c72f;white-space:nowrap;margin-bottom:8px}
+.win-subtitle{font-size:18px;color:#666;margin-bottom:20px}
+.win-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.win-btns button{padding:10px 24px;border:none;border-radius:10px;font-size:16px;color:#fff;cursor:pointer}
+.btn-continue{background:#34c72f}.btn-back{background:#d83080}
+</style>
+</head>
+<body>
+<div class="title">🪣 调浆料</div>
+<div class="help-banner">
+  <span class="help-icon">👆</span>
+  <span class="help-text">长按 + 加料，松手停止，对准比例！</span>
+</div>
+
+<div id="gameBox">
+  <!-- 上半部分：订单 + 桶 -->
+  <div class="top-row">
+    <div class="recipe-card">
+      <div class="rc-row"><span class="rc-icon">🌾</span><span class="rc-val rc-starch" id="rcStarch">3</span></div>
+      <div class="rc-row"><span class="rc-icon">💧</span><span class="rc-val rc-water" id="rcWater">5</span></div>
+      <div class="rc-row"><span class="rc-icon">🧪</span><span class="rc-val rc-pva" id="rcPva">2</span></div>
+    </div>
+    <div class="bucket-area">
+      <div class="bucket" id="bucket">
+        <div class="bucket-liquid" id="bucketLiquid" style="height:0%"></div>
+        <div class="bucket-label" id="bucketLabel">空桶</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 原料 -->
+  <div class="ingredients" id="ingredients"></div>
+
+  <!-- 按钮 -->
+  <div class="btn-row">
+    <button class="confirm-btn" id="confirmBtn" disabled>全部调好才能确认</button>
+    <button class="reset-btn-sm" id="resetBtn">🔄 重置</button>
+  </div>
+  <div class="status-text" id="statusText">小心别加超了哦~</div>
+
+  <!-- 通关弹窗 -->
+  <div class="win-overlay" id="winOverlay">
+    <div class="win-box">
+      <div class="win-title">🎉 调配完成！</div>
+      <div class="win-subtitle" id="winSubtitle">✨ 获得 +1 抽卡次数！</div>
+      <div class="win-btns">
+        <button class="btn-continue" id="btnContinue">继续玩</button>
+        <button class="btn-back" id="btnBack">返回抽卡</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const TASK_ID=2;
+function isTaskAlreadyCompleted(){try{const r=localStorage.getItem('jiaxuan_data');if(!r)return false;const d=JSON.parse(r);return d.tasks&&d.tasks[TASK_ID]===true}catch{return false}}
+let hasCompletedOnce=isTaskAlreadyCompleted(),isWon=false;
+
+const MAX_PER_ING=10,POUR_SPEED=150;
+
+let recipe=[];
+let currentAmounts=[0,0,0];
+let activeIng=-1,pourInterval=null;
+
+const bucketLiquid=document.getElementById('bucketLiquid');
+const bucketLabel=document.getElementById('bucketLabel');
+const rcStarch=document.getElementById('rcStarch');
+const rcWater=document.getElementById('rcWater');
+const rcPva=document.getElementById('rcPva');
+const confirmBtn=document.getElementById('confirmBtn');
+const statusText=document.getElementById('statusText');
+const ingredientsEl=document.getElementById('ingredients');
+const winOverlay=document.getElementById('winOverlay');
+const winSubtitle=document.getElementById('winSubtitle');
+const btnContinue=document.getElementById('btnContinue');
+const btnBack=document.getElementById('btnBack');
+
+const ingNames=['淀粉','水','PVA'];
+const ingIcons=['🌾','💧','🧪'];
+
+function generateRecipe(){
+  const total=8+Math.floor(Math.random()*5);
+  let a=2+Math.floor(Math.random()*(total-4));
+  let b=2+Math.floor(Math.random()*(total-a-2));
+  let c=total-a-b;
+  const arr=[a,b,c];
+  for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]]}
+  return arr;
+}
+
+function loadRecipe(){
+  recipe=generateRecipe();
+  rcStarch.textContent=recipe[0];rcWater.textContent=recipe[1];rcPva.textContent=recipe[2];
+  currentAmounts=[0,0,0];activeIng=-1;
+  clearInterval(pourInterval);
+  renderIngredients();updateAll();
+}
+
+function renderIngredients(){
+  ingredientsEl.innerHTML='';
+  for(let i=0;i<3;i++){
+    const done=currentAmounts[i]===recipe[i];
+    const over=currentAmounts[i]>recipe[i];
+    const div=document.createElement('div');
+    div.className=`ingredient${activeIng===i?' active':''}${done?' done':''}`;
+    div.innerHTML=`
+      <span class="ing-icon">${ingIcons[i]}</span>
+      <div class="ing-info">
+        <span class="ing-name">${ingNames[i]} · 目标 ${recipe[i]} 份</span>
+        <div class="ing-bar-wrap"><div class="ing-bar${done?' perfect':''}${over?' over':''}" id="bar${i}" style="width:0%"></div></div>
+      </div>
+      <span class="ing-current" id="cur${i}">0</span>
+      <span class="ing-unit">份</span>
+      <button class="pour-btn${done?' done-btn':''}" id="pourBtn${i}">${done?'✓':'+'}<span class="ring"></span></button>
+    `;
+    ingredientsEl.appendChild(div);
+  }
+  for(let i=0;i<3;i++){
+    const btn=document.getElementById('pourBtn'+i);
+    btn.addEventListener('mousedown',e=>{e.preventDefault();startPour(i)});
+    btn.addEventListener('touchstart',e=>{e.preventDefault();startPour(i)});
+    btn.addEventListener('mouseup',stopPour);
+    btn.addEventListener('mouseleave',stopPour);
+    btn.addEventListener('touchend',stopPour);
+    btn.addEventListener('touchcancel',stopPour);
+  }
+}
+
+function startPour(i){
+  if(currentAmounts[i]>=MAX_PER_ING||currentAmounts[i]===recipe[i])return;
+  activeIng=i;clearInterval(pourInterval);
+  pourInterval=setInterval(()=>{
+    if(currentAmounts[i]>=MAX_PER_ING){stopPour();return}
+    currentAmounts[i]++;updateAll();
+    if(currentAmounts[i]>=MAX_PER_ING)stopPour();
+  },POUR_SPEED);
+  updateIngredientStyles();
+}
+
+function stopPour(){activeIng=-1;clearInterval(pourInterval);updateIngredientStyles()}
+
+function updateIngredientStyles(){
+  for(let i=0;i<3;i++){
+    const done=currentAmounts[i]===recipe[i];
+    const btn=document.getElementById('pourBtn'+i);
+    if(btn){
+      btn.textContent=done?'✓':'+';
+      btn.className='pour-btn'+(done?' done-btn':'');
+      const p=btn.parentElement;
+      if(p){p.classList.toggle('active',activeIng===i);p.classList.toggle('done',done)}
+    }
+  }
+}
+
+function updateAll(){
+  let totalAmount=0,allCorrect=true;
+  for(let i=0;i<3;i++){
+    totalAmount+=currentAmounts[i];
+    const bar=document.getElementById('bar'+i),cur=document.getElementById('cur'+i);
+    if(bar)bar.style.width=(currentAmounts[i]/MAX_PER_ING*100)+'%';
+    if(cur)cur.textContent=currentAmounts[i];
+    if(currentAmounts[i]===recipe[i]){if(bar)bar.className='ing-bar perfect'}
+    else if(currentAmounts[i]>recipe[i]){if(bar)bar.className='ing-bar over';allCorrect=false}
+    else{if(bar)bar.className='ing-bar';allCorrect=false}
+  }
+  const maxTotal=MAX_PER_ING*3;
+  const pct=Math.min(100,totalAmount/maxTotal*100);
+  bucketLiquid.style.height=pct+'%';bucketLiquid.className='bucket-liquid';
+  if(allCorrect){
+    bucketLiquid.classList.add('perfect');bucketLabel.textContent='比例完美！';
+    confirmBtn.textContent='✓ 确认配方';confirmBtn.classList.add('ready');confirmBtn.disabled=false;
+    statusText.textContent='全部调好了，点击确认吧！';
+  }else{
+    const overSome=currentAmounts.some((a,i)=>a>recipe[i]);
+    if(overSome){bucketLiquid.classList.add('over');bucketLabel.textContent='⚠ 超量！';statusText.textContent='加太多了！点击重置重新调配'}
+    else{bucketLabel.textContent=totalAmount===0?'空桶':`已加 ${totalAmount} 份`;statusText.textContent='继续加料，对准目标比例'}
+    confirmBtn.textContent='全部调好才能确认';confirmBtn.classList.remove('ready');confirmBtn.disabled=true;
+  }
+  updateIngredientStyles();
+}
+
+confirmBtn.addEventListener('click',()=>{
+  if(!currentAmounts.every((a,i)=>a===recipe[i]))return;
+  isWon=true;onWin();
+});
+
+document.addEventListener('mouseup',stopPour);
+document.addEventListener('touchend',stopPour);
+
+function onWin(){
+  clearInterval(pourInterval);
+  if(!hasCompletedOnce){hasCompletedOnce=true;window.parent.postMessage({type:'taskComplete',taskId:TASK_ID},'*');winSubtitle.textContent='✨ 获得 +1 抽卡次数！'}
+  else{winSubtitle.textContent='🔄 重玩通关'}
+  winOverlay.classList.add('show');
+}
+
+function resetGame(){
+  clearInterval(pourInterval);activeIng=-1;
+  loadRecipe();isWon=false;winOverlay.classList.remove('show');
+  statusText.textContent='小心别加超了哦~';
+}
+
+btnContinue.addEventListener('click',()=>{resetGame()});
+btnBack.addEventListener('click',()=>{window.parent.postMessage({type:'closeGame'},'*')});
+document.getElementById('resetBtn').addEventListener('click',()=>{hasCompletedOnce=isTaskAlreadyCompleted();resetGame()});
+
+loadRecipe();
+</script>
+</body>
+</html>
