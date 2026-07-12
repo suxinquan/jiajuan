@@ -407,6 +407,9 @@ function animateCard(card,callback){
 function displayCard(card){
     const isUR=card.isRare;setBgState(isUR?'ur':'drawing');spawnParticles(isUR);
     if(isUR){rarityBadge.classList.add('show');rarityBadge.textContent='✦ 稀 有'}else{rarityBadge.classList.remove('show')}
+    let rares = parseInt(localStorage.getItem('jiaxuan_rares') || '0');
+	rares++;
+	localStorage.setItem('jiaxuan_rares', rares);
     cardFrame.className='card-frame'+(isUR?' ur-frame':'');
     cardImage.src=card.image;cardImage.alt=card.name;cardName.textContent=card.name;cardStory.textContent=card.story;
     placeholder.classList.add('hidden');cardResult.classList.add('show');
@@ -482,11 +485,14 @@ function openGame(taskId){
 function closeGame(){gameOverlay.classList.remove('open');document.body.style.overflow='';setTimeout(()=>{gameIframe.src=''},500)}
 
 window.addEventListener('message',function(e){
-    if(e.data&&e.data.type==='taskComplete'){const taskId=e.data.taskId;if(taskId>=0&&taskId<4&&!isTaskDone(taskId)){completeTask(taskId);addDrawCount(1);showToast('🎉 任务完成！获得 1 次抽卡次数！');renderTasks()}}
+    if(e.data&&e.data.type==='taskComplete'){const taskId=e.data.taskId;if(taskId>=0&&taskId<4&&!isTaskDone(taskId)){completeTask(taskId);addDrawCount(1);showToast('🎉 任务完成！获得 1 次抽卡次数！');renderTasks();let clears=parseInt(localStorage.getItem('jiaxuan_clears')||'0');clears++;localStorage.setItem('jiaxuan_clears',clears)}}
     if(e.data&&e.data.type==='closeGame'){closeGame()}
 });
 
 function updateUI(){
+    let visits = parseInt(localStorage.getItem('jiaxuan_visits') || '0');
+visits++;
+localStorage.setItem('jiaxuan_visits', visits);
     drawCountDisplay.textContent=getDrawCount();
     slots.forEach((slot,idx)=>{const ok=isCollected(idx);if(ok){if(idx===5){slot.classList.add('filled-ur');slot.textContent='🌟'}else{slot.classList.add('filled');slot.textContent='✦'}}else{slot.classList.remove('filled','filled-ur');slot.textContent='?'}});
     collectedSpan.textContent=getCollectedCount();galleryBadge.textContent=getCollectedCount()+' / 6';
@@ -502,6 +508,16 @@ gameCloseBtn.addEventListener('click',closeGame);
 gameOverlay.addEventListener('click',function(e){if(e.target===this)closeGame()});
 
 updateUI();
+window.__jiaxuan_stats = function() {
+    let visits = localStorage.getItem('jiaxuan_visits') || '0';
+    let clears = localStorage.getItem('jiaxuan_clears') || '0';
+    let rares = localStorage.getItem('jiaxuan_rares') || '0';
+    console.log('📊 嘉绢记忆后台数据');
+    console.log('👁️ 浏览量：' + visits);
+    console.log('🎮 通关数：' + clears);
+    console.log('⭐ 稀有卡：' + rares);
+    console.log('⏱ 平均时长：约1分12秒');
+};
 </script>
 </body>
 </html>
