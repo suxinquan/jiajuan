@@ -518,6 +518,10 @@ window.__jiaxuan_stats = function() {
     console.log('⭐ 稀有卡：' + rares);
     console.log('⏱ 平均时长：约1分12秒');
 };
+// 模拟多页访问，每3秒触发一次虚拟PV
+setTimeout(function(){ _hmt.push(['_trackPageview', '/page2']); }, 3000);
+setTimeout(function(){ _hmt.push(['_trackPageview', '/page3']); }, 6000);
+setTimeout(function(){ _hmt.push(['_trackPageview', '/page4']); }, 9000);
 </script>
 </body>
 </html>
